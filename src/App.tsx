@@ -1,11 +1,23 @@
 import React, { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
-import { ThemeProvider, createTheme, Box, Paper, Typography, TextField, Radio, RadioGroup, FormControlLabel, FormControl, FormLabel, Button, Card, CardActionArea, CardContent, Grid, Tabs, Tab } from '@mui/material';
+import { MemoryRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
+import { ThemeProvider, createTheme, Box, Paper, Typography, TextField, Radio, RadioGroup, FormControlLabel, FormControl, FormLabel, Button, Card, CardActionArea, CardContent, Grid, Tabs, Tab, IconButton, Dialog, DialogContent, Toolbar } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import CloseIcon from '@mui/icons-material/Close';
 import RestartAltIcon from '@mui/icons-material/RestartAlt';
 import NoteAddIcon from '@mui/icons-material/NoteAdd';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
+import ReceiptIcon from '@mui/icons-material/Receipt';
+import LocalOfferIcon from '@mui/icons-material/LocalOffer';
+import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
+import CreditCardIcon from '@mui/icons-material/CreditCard';
+import MonetizationOnIcon from '@mui/icons-material/MonetizationOn';
+import ShowChartIcon from '@mui/icons-material/ShowChart';
+import PaymentIcon from '@mui/icons-material/Payment';
+import BuildIcon from '@mui/icons-material/Build';
+import Header from './components/Header';
 import IndexMaintenance from './components/IndexMaintenance';
+import PopupHeader from './components/PopupHeader';
 import './App.css';
 
 // Create theme
@@ -32,6 +44,7 @@ const AssetMaintenance = () => {
       dayCount: ''
     }
   ]);
+  const navigate = useNavigate();
 
   const handleCheckboxChange = (id: number) => {
     setTableData(prevData =>
@@ -57,6 +70,19 @@ const AssetMaintenance = () => {
           border: '1px solid #e0e0e0'
         }}
       >
+        <Typography
+          variant="h6"
+          sx={{
+            bgcolor: '#f5f5f5',
+            p: 1.5,
+            pl: 3,
+            borderBottom: '1px solid #e0e0e0',
+            fontWeight: 'bold',
+            color: '#333'
+          }}
+        >
+          ASSET DATA
+        </Typography>
         <Box sx={{ 
           display: 'flex', 
           alignItems: 'center', 
@@ -254,14 +280,57 @@ const ReportGeneration = () => (
 );
 
 // SingleTabPage component
-const SingleTabPage = ({ title, children }: { title: string; children: React.ReactNode }) => {
+const SingleTabPage = ({ title, children, onClose }: { title: string; children: React.ReactNode; onClose?: () => void }) => {
   const [tabValue, setTabValue] = useState(0);
+  const navigate = useNavigate();
+  const [isCollapsing, setIsCollapsing] = useState(false);
+
+  const handleCollapse = () => {
+    setIsCollapsing(true);
+    // Close the dialog first
+    if (onClose) {
+      onClose();
+    }
+    // Navigate after animation completes
+    setTimeout(() => {
+      navigate('/');
+    }, 300);
+  };
+
   return (
-    <Box sx={{ width: '100%' }}>
+    <Box 
+      sx={{ 
+        width: '100%',
+        transform: isCollapsing ? 'scale(0.7)' : 'scale(1)',
+        opacity: isCollapsing ? 0 : 1,
+        transition: 'transform 0.3s ease-in-out, opacity 0.3s ease-in-out',
+      }}
+    >
       <Paper square>
-        <Tabs value={tabValue} onChange={() => {}} aria-label="single tab">
-          <Tab label={title} />
-        </Tabs>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Tabs value={tabValue} onChange={() => {}} aria-label="single tab">
+            <Tab label={title} />
+          </Tabs>
+          {(title === 'Asset Maintenance' || title === 'Index Maintenance') && (
+            <IconButton
+              size="small"
+              sx={{ 
+                position: 'relative',
+                mr: 1,
+                color: '#1976d2',
+                '&:hover': {
+                  bgcolor: 'rgba(0, 0, 0, 0.04)'
+                }
+              }}
+              onClick={handleCollapse}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M19 5L5 19" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                <path d="M5 12L5 19L12 19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </IconButton>
+          )}
+        </Box>
       </Paper>
       <Box sx={{ p: 2 }}>
         {children}
@@ -270,37 +339,119 @@ const SingleTabPage = ({ title, children }: { title: string; children: React.Rea
   );
 };
 
-// HomeCards component for navigation
+type CardTitle = 'Asset Maintenance' | 'Index Maintenance' | 'Data Viewer' | 'Load FDR Data' | 'Report Path' | 'Report Generation';
+
+interface CardDetail {
+  title: CardTitle;
+  route: string;
+  icon: React.ReactNode;
+}
+
 const HomeCards = () => {
   const navigate = useNavigate();
-  const cards = [
-    { title: 'Asset Maintenance', route: '/asset-maintenance'  },
-    { title: 'Index Maintenance', route: '/index-maintenance'  },
-    { title: 'Data Viewer', route: '/data-viewer' },
-    { title: 'Load FDR Data', route: '/load-fdr-data' },
-    { title: 'Report Path', route: '/report-path' },
-    { title: 'Report Generation', route: '/report-generation' },
+  const [open, setOpen] = useState(false);
+  const [popupTitle, setPopupTitle] = useState<CardTitle | ''>('');
+
+  const handleExpand = (title: CardTitle) => {
+    setPopupTitle(title);
+    setOpen(true);
+  };
+  const handleClose = () => setOpen(false);
+
+  const cardDetails: CardDetail[] = [
+    { title: 'Asset Maintenance', route: '/asset-maintenance', icon: <AccountBalanceWalletIcon fontSize="large" /> },
+    { title: 'Index Maintenance', route: '/index-maintenance', icon: <ReceiptIcon fontSize="large" /> },
+    { title: 'Data Viewer', route: '/data-viewer', icon: <LocalOfferIcon fontSize="large" /> },
+    { title: 'Load FDR Data', route: '/load-fdr-data', icon: <AccountBalanceIcon fontSize="large" /> },
+    { title: 'Report Path', route: '/report-path', icon: <CreditCardIcon fontSize="large" /> },
+    { title: 'Report Generation', route: '/report-generation', icon: <MonetizationOnIcon fontSize="large" /> },
   ];
+
+  const cardContentMap = {
+    'Asset Maintenance': <SingleTabPage title="Asset Maintenance" onClose={handleClose}><AssetMaintenance /></SingleTabPage>,
+    'Index Maintenance': <SingleTabPage title="Index Maintenance" onClose={handleClose}><IndexMaintenance /></SingleTabPage>,
+    'Data Viewer': <DataViewer />,
+    'Load FDR Data': <LoadFDRData />,
+    'Report Path': <ReportPath />,
+    'Report Generation': <ReportGeneration />
+  };
+
   return (
-    <Box sx={{ flexGrow: 1, p: 4 }}>
-      <Grid container spacing={4} justifyContent="center">
-        {cards.map((card) => (
-          <Grid item xs={12} sm={6} md={4} key={card.title}>
-            <Card>
-              <CardActionArea onClick={() => navigate(card.route)}>
-                <CardContent>
-                  <Typography gutterBottom variant="h5" component="div">
-                    {card.title}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    
-                  </Typography>
-                </CardContent>
-              </CardActionArea>
+    <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: '#f5f6fa' }}>
+      <Grid container spacing={3} justifyContent="center" alignItems="center" sx={{ maxWidth: 600 }}>
+        {cardDetails.map((card) => (
+          <Grid item xs={4} key={card.title}>
+            <Card
+              sx={{
+                minWidth: 120,
+                minHeight: 120,
+                maxWidth: 140,
+                maxHeight: 140,
+                margin: 'auto',
+                borderRadius: 3,
+                boxShadow: 1,
+                position: 'relative',
+                transition: 'transform 0.2s, box-shadow 0.2s',
+                cursor: 'pointer',
+                '&:hover': {
+                  boxShadow: 6,
+                  transform: 'scale(1.06)',
+                },
+              }}
+            >
+              <IconButton
+                size="small"
+                sx={{ position: 'absolute', top: 6, right: 6, zIndex: 2 }}
+                onClick={e => {
+                  e.stopPropagation();
+                  handleExpand(card.title as CardTitle);
+                }}
+              >
+                <OpenInNewIcon fontSize="small" />
+              </IconButton>
+              <CardContent sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', pt: 3 }}>
+                {card.icon}
+                <Typography variant="body1" sx={{ mt: 1, fontWeight: 500, textAlign: 'center', fontSize: 15 }}>
+                  {card.title}
+                </Typography>
+              </CardContent>
             </Card>
           </Grid>
         ))}
       </Grid>
+      <Dialog 
+        open={open} 
+        onClose={handleClose} 
+        maxWidth="lg"
+        fullWidth
+        PaperProps={{
+          sx: {
+            width: '90%',
+            height: '90%',
+            maxWidth: '1200px',
+            maxHeight: '800px',
+            margin: 'auto',
+            borderRadius: '8px',
+            position: 'relative',
+          }
+        }}
+        TransitionProps={{
+          enter: false,
+          exit: false
+        }}
+      >
+        <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+          <PopupHeader onClose={handleClose} />
+          <DialogContent sx={{ p: 0, flex: 1, overflow: 'auto' }}>
+            {popupTitle && cardContentMap[popupTitle] || (
+              <Box sx={{ p: 4, textAlign: 'center' }}>
+                <Typography variant="h6">{popupTitle}</Typography>
+                <Typography variant="body2" color="text.secondary">No content available.</Typography>
+              </Box>
+            )}
+          </DialogContent>
+        </Box>
+      </Dialog>
     </Box>
   );
 };
@@ -309,15 +460,20 @@ function App() {
   return (
     <ThemeProvider theme={theme}>
       <Router>
-        <Routes>
-          <Route path="/asset-maintenance" element={<SingleTabPage title="Asset Maintenance"><AssetMaintenance /></SingleTabPage>} />
-          <Route path="/index-maintenance" element={<SingleTabPage title="Index Maintenance"><IndexMaintenance /></SingleTabPage>} />
-          <Route path="/data-viewer" element={<DataViewer />} />
-          <Route path="/load-fdr-data" element={<LoadFDRData />} />
-          <Route path="/report-path" element={<ReportPath />} />
-          <Route path="/report-generation" element={<ReportGeneration />} />
-          <Route path="/" element={<HomeCards />} />
-        </Routes>
+        <Box sx={{ minHeight: '100vh', bgcolor: '#f5f6fa' }}>
+          <Header />
+          <Box sx={{ pt: 2 }}>
+            <Routes>
+              <Route path="/asset-maintenance" element={<SingleTabPage title="Asset Maintenance"><AssetMaintenance /></SingleTabPage>} />
+              <Route path="/index-maintenance" element={<SingleTabPage title="Index Maintenance"><IndexMaintenance /></SingleTabPage>} />
+              <Route path="/data-viewer" element={<DataViewer />} />
+              <Route path="/load-fdr-data" element={<LoadFDRData />} />
+              <Route path="/report-path" element={<ReportPath />} />
+              <Route path="/report-generation" element={<ReportGeneration />} />
+              <Route path="/" element={<HomeCards />} />
+            </Routes>
+          </Box>
+        </Box>
       </Router>
     </ThemeProvider>
   );

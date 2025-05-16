@@ -30,6 +30,21 @@ const IndexMaintenance: React.FC = () => {
           border: '1px solid #e0e0e0'
         }}
       >
+        <Box
+          component="div"
+          sx={{
+            bgcolor: '#f5f5f5',
+            p: 1.5,
+            pl: 3,
+            borderBottom: '1px solid #e0e0e0',
+            fontWeight: 'bold',
+            color: '#333',
+            fontSize: '1.25rem',
+            letterSpacing: 0.5,
+          }}
+        >
+          INDEX DATA
+        </Box>
         <Box sx={{ 
           display: 'flex', 
           alignItems: 'center', 
