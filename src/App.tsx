@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { ThemeProvider, createTheme, Box, Paper, Typography, TextField, Radio, RadioGroup, FormControlLabel, FormControl, FormLabel, Button } from '@mui/material';
-import Layout from './components/Layout';
-import TabManager from './components/TabManager';
+import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
+import { ThemeProvider, createTheme, Box, Paper, Typography, TextField, Radio, RadioGroup, FormControlLabel, FormControl, FormLabel, Button, Card, CardActionArea, CardContent, Grid, Tabs, Tab } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import CloseIcon from '@mui/icons-material/Close';
 import RestartAltIcon from '@mui/icons-material/RestartAlt';
 import NoteAddIcon from '@mui/icons-material/NoteAdd';
+import IndexMaintenance from './components/IndexMaintenance';
 import './App.css';
 
 // Create theme
@@ -226,13 +225,6 @@ const AssetMaintenance = () => {
   );
 };
 
-const IndexMaintenance = () => (
-  <div>
-    <h2>Index Maintenance</h2>
-    <p>Index management and configuration options will be shown here.</p>
-  </div>
-);
-
 const DataViewer = () => (
   <div>
     <h2>Data Viewer</h2>
@@ -261,23 +253,71 @@ const ReportGeneration = () => (
   </div>
 );
 
+// SingleTabPage component
+const SingleTabPage = ({ title, children }: { title: string; children: React.ReactNode }) => {
+  const [tabValue, setTabValue] = useState(0);
+  return (
+    <Box sx={{ width: '100%' }}>
+      <Paper square>
+        <Tabs value={tabValue} onChange={() => {}} aria-label="single tab">
+          <Tab label={title} />
+        </Tabs>
+      </Paper>
+      <Box sx={{ p: 2 }}>
+        {children}
+      </Box>
+    </Box>
+  );
+};
+
+// HomeCards component for navigation
+const HomeCards = () => {
+  const navigate = useNavigate();
+  const cards = [
+    { title: 'Asset Maintenance', route: '/asset-maintenance'  },
+    { title: 'Index Maintenance', route: '/index-maintenance'  },
+    { title: 'Data Viewer', route: '/data-viewer' },
+    { title: 'Load FDR Data', route: '/load-fdr-data' },
+    { title: 'Report Path', route: '/report-path' },
+    { title: 'Report Generation', route: '/report-generation' },
+  ];
+  return (
+    <Box sx={{ flexGrow: 1, p: 4 }}>
+      <Grid container spacing={4} justifyContent="center">
+        {cards.map((card) => (
+          <Grid item xs={12} sm={6} md={4} key={card.title}>
+            <Card>
+              <CardActionArea onClick={() => navigate(card.route)}>
+                <CardContent>
+                  <Typography gutterBottom variant="h5" component="div">
+                    {card.title}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    
+                  </Typography>
+                </CardContent>
+              </CardActionArea>
+            </Card>
+          </Grid>
+        ))}
+      </Grid>
+    </Box>
+  );
+};
+
 function App() {
   return (
     <ThemeProvider theme={theme}>
       <Router>
-        <TabManager>
-          <Layout>
-            <Routes>
-              <Route path="/asset-maintenance" element={<AssetMaintenance />} />
-              <Route path="/index-maintenance" element={<IndexMaintenance />} />
-              <Route path="/data-viewer" element={<DataViewer />} />
-              <Route path="/load-fdr-data" element={<LoadFDRData />} />
-              <Route path="/report-path" element={<ReportPath />} />
-              <Route path="/report-generation" element={<ReportGeneration />} />
-              <Route path="/" element={<div>Welcome to EYA Application</div>} />
-            </Routes>
-          </Layout>
-        </TabManager>
+        <Routes>
+          <Route path="/asset-maintenance" element={<SingleTabPage title="Asset Maintenance"><AssetMaintenance /></SingleTabPage>} />
+          <Route path="/index-maintenance" element={<SingleTabPage title="Index Maintenance"><IndexMaintenance /></SingleTabPage>} />
+          <Route path="/data-viewer" element={<DataViewer />} />
+          <Route path="/load-fdr-data" element={<LoadFDRData />} />
+          <Route path="/report-path" element={<ReportPath />} />
+          <Route path="/report-generation" element={<ReportGeneration />} />
+          <Route path="/" element={<HomeCards />} />
+        </Routes>
       </Router>
     </ThemeProvider>
   );
