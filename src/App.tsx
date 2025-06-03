@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MemoryRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
+import { MemoryRouter as Router, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { ThemeProvider, createTheme, Box, Paper, Typography, TextField, Radio, RadioGroup, FormControlLabel, FormControl, FormLabel, Button, Card, CardActionArea, CardContent, Grid, Tabs, Tab, IconButton, Dialog, DialogContent, Toolbar } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import CloseIcon from '@mui/icons-material/Close';
@@ -17,7 +17,11 @@ import PaymentIcon from '@mui/icons-material/Payment';
 import BuildIcon from '@mui/icons-material/Build';
 import Header from './components/Header';
 import IndexMaintenance from './components/IndexMaintenance';
+import DataViewer from './components/DataViewer';
+import LoadFDRData from './components/LoadFDRData';
 import PopupHeader from './components/PopupHeader';
+import ReportPath from './components/ReportPath';
+import ReportGeneration from './components/ReportGeneration';
 import './App.css';
 
 // Create theme
@@ -251,34 +255,6 @@ const AssetMaintenance = () => {
   );
 };
 
-const DataViewer = () => (
-  <div>
-    <h2>Data Viewer</h2>
-    <p>Data viewing and analysis tools will be available in this section.</p>
-  </div>
-);
-
-const LoadFDRData = () => (
-  <div>
-    <h2>Load FDR Data</h2>
-    <p>FDR data loading and processing options will be displayed here.</p>
-  </div>
-);
-
-const ReportPath = () => (
-  <div>
-    <h2>Report Path</h2>
-    <p>Report path configuration and management will be shown here.</p>
-  </div>
-);
-
-const ReportGeneration = () => (
-  <div>
-    <h2>Report Generation</h2>
-    <p>Report generation tools and options will be available in this section.</p>
-  </div>
-);
-
 // SingleTabPage component
 const SingleTabPage = ({ title, children, onClose }: { title: string; children: React.ReactNode; onClose?: () => void }) => {
   const [tabValue, setTabValue] = useState(0);
@@ -287,11 +263,9 @@ const SingleTabPage = ({ title, children, onClose }: { title: string; children: 
 
   const handleCollapse = () => {
     setIsCollapsing(true);
-    // Close the dialog first
     if (onClose) {
       onClose();
     }
-    // Navigate after animation completes
     setTimeout(() => {
       navigate('/');
     }, 300);
@@ -306,32 +280,56 @@ const SingleTabPage = ({ title, children, onClose }: { title: string; children: 
         transition: 'transform 0.3s ease-in-out, opacity 0.3s ease-in-out',
       }}
     >
-      <Paper square>
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Tabs value={tabValue} onChange={() => {}} aria-label="single tab">
-            <Tab label={title} />
-          </Tabs>
-          {(title === 'Asset Maintenance' || title === 'Index Maintenance') && (
-            <IconButton
-              size="small"
-              sx={{ 
-                position: 'relative',
-                mr: 1,
-                color: '#1976d2',
-                '&:hover': {
-                  bgcolor: 'rgba(0, 0, 0, 0.04)'
-                }
-              }}
-              onClick={handleCollapse}
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M19 5L5 19" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                <path d="M5 12L5 19L12 19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </IconButton>
-          )}
+      {/* Only render the tab header if not FDR Loading */}
+      {title !== 'FDR Loading' && (
+        <Paper square>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Tabs value={tabValue} onChange={() => {}} aria-label="single tab">
+              <Tab label={title} />
+            </Tabs>
+            {(title === 'Asset Maintenance' || title === 'Index Maintenance' || title === 'View FDR Data') && (
+              <IconButton
+                size="small"
+                sx={{ 
+                  position: 'relative',
+                  mr: 1,
+                  color: '#1976d2',
+                  '&:hover': {
+                    bgcolor: 'rgba(0, 0, 0, 0.04)'
+                  }
+                }}
+                onClick={handleCollapse}
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M19 5L5 19" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                  <path d="M5 12L5 19L12 19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </IconButton>
+            )}
+          </Box>
+        </Paper>
+      )}
+      {/* For FDR Loading, show only the collapse icon in the top right */}
+      {title === 'FDR Loading' && (
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', height: 48 }}>
+          <IconButton
+            size="small"
+            sx={{ 
+              mr: 2,
+              color: '#1976d2',
+              '&:hover': {
+                bgcolor: 'rgba(0, 0, 0, 0.04)'
+              }
+            }}
+            onClick={handleCollapse}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M19 5L5 19" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+              <path d="M5 12L5 19L12 19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </IconButton>
         </Box>
-      </Paper>
+      )}
       <Box sx={{ p: 2 }}>
         {children}
       </Box>
@@ -351,12 +349,32 @@ const HomeCards = () => {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [popupTitle, setPopupTitle] = useState<CardTitle | ''>('');
+  const [showFDRPrompt, setShowFDRPrompt] = useState(false);
+  const [showReportPathPrompt, setShowReportPathPrompt] = useState(false);
+  const [showReportGenerationPrompt, setShowReportGenerationPrompt] = useState(false);
 
   const handleExpand = (title: CardTitle) => {
-    setPopupTitle(title);
-    setOpen(true);
+    if (title === 'Load FDR Data') {
+      setShowFDRPrompt(true);
+      setPopupTitle(title);
+    } else if (title === 'Report Path') {
+      setShowReportPathPrompt(true);
+      setPopupTitle(title);
+    } else if (title === 'Report Generation') {
+      setShowReportGenerationPrompt(true);
+      setPopupTitle(title);
+    } else {
+      setPopupTitle(title);
+      setOpen(true);
+    }
   };
-  const handleClose = () => setOpen(false);
+
+  const handleClose = () => {
+    setOpen(false);
+    setShowFDRPrompt(false);
+    setShowReportPathPrompt(false);
+    setShowReportGenerationPrompt(false);
+  };
 
   const cardDetails: CardDetail[] = [
     { title: 'Asset Maintenance', route: '/asset-maintenance', icon: <AccountBalanceWalletIcon fontSize="large" /> },
@@ -370,9 +388,9 @@ const HomeCards = () => {
   const cardContentMap = {
     'Asset Maintenance': <SingleTabPage title="Asset Maintenance" onClose={handleClose}><AssetMaintenance /></SingleTabPage>,
     'Index Maintenance': <SingleTabPage title="Index Maintenance" onClose={handleClose}><IndexMaintenance /></SingleTabPage>,
-    'Data Viewer': <DataViewer />,
-    'Load FDR Data': <LoadFDRData />,
-    'Report Path': <ReportPath />,
+    'Data Viewer': <SingleTabPage title="View FDR Data" onClose={handleClose}><DataViewer /></SingleTabPage>,
+    'Load FDR Data': <SingleTabPage title="FDR Loading" onClose={handleClose}><LoadFDRData onClose={handleClose} /></SingleTabPage>,
+    'Report Path': <ReportPath onClose={handleClose} />,
     'Report Generation': <ReportGeneration />
   };
 
@@ -419,6 +437,7 @@ const HomeCards = () => {
           </Grid>
         ))}
       </Grid>
+      {/* Dialog for all except Load FDR Data, Report Path, and Report Generation */}
       <Dialog 
         open={open} 
         onClose={handleClose} 
@@ -443,7 +462,11 @@ const HomeCards = () => {
         <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
           <PopupHeader onClose={handleClose} />
           <DialogContent sx={{ p: 0, flex: 1, overflow: 'auto' }}>
-            {popupTitle && cardContentMap[popupTitle] || (
+            {popupTitle && 
+             popupTitle !== 'Load FDR Data' && 
+             popupTitle !== 'Report Path' && 
+             popupTitle !== 'Report Generation' && 
+             cardContentMap[popupTitle] || (
               <Box sx={{ p: 4, textAlign: 'center' }}>
                 <Typography variant="h6">{popupTitle}</Typography>
                 <Typography variant="body2" color="text.secondary">No content available.</Typography>
@@ -452,31 +475,59 @@ const HomeCards = () => {
           </DialogContent>
         </Box>
       </Dialog>
+      {/* Direct prompt for Load FDR Data */}
+      {showFDRPrompt && (
+        <Box sx={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', bgcolor: 'rgba(0,0,0,0.10)', zIndex: 1300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <LoadFDRData onClose={handleClose} />
+        </Box>
+      )}
+      {/* Direct prompt for Report Path */}
+      {showReportPathPrompt && (
+        <Box sx={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', bgcolor: 'rgba(0,0,0,0.10)', zIndex: 1300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <ReportPath onClose={handleClose} />
+        </Box>
+      )}
+      {/* Direct prompt for Report Generation */}
+      {showReportGenerationPrompt && (
+        <Box sx={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', bgcolor: 'rgba(0,0,0,0.10)', zIndex: 1300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <ReportGeneration onClose={handleClose} />
+        </Box>
+      )}
     </Box>
   );
 };
 
 function App() {
+  const location = useLocation();
+  const isLoadFDRRoute = location.pathname === '/load-fdr-data';
+
   return (
     <ThemeProvider theme={theme}>
-      <Router>
-        <Box sx={{ minHeight: '100vh', bgcolor: '#f5f6fa' }}>
-          <Header />
-          <Box sx={{ pt: 2 }}>
-            <Routes>
-              <Route path="/asset-maintenance" element={<SingleTabPage title="Asset Maintenance"><AssetMaintenance /></SingleTabPage>} />
-              <Route path="/index-maintenance" element={<SingleTabPage title="Index Maintenance"><IndexMaintenance /></SingleTabPage>} />
-              <Route path="/data-viewer" element={<DataViewer />} />
-              <Route path="/load-fdr-data" element={<LoadFDRData />} />
-              <Route path="/report-path" element={<ReportPath />} />
-              <Route path="/report-generation" element={<ReportGeneration />} />
-              <Route path="/" element={<HomeCards />} />
-            </Routes>
-          </Box>
+      <Box sx={{ minHeight: '100vh', bgcolor: '#f5f6fa' }}>
+        {/* Only show header if not on Load FDR Data route */}
+        {!isLoadFDRRoute && <Header />}
+        <Box sx={{ pt: isLoadFDRRoute ? 0 : 2 }}>
+          <Routes>
+            <Route path="/asset-maintenance" element={<SingleTabPage title="Asset Maintenance"><AssetMaintenance /></SingleTabPage>} />
+            <Route path="/index-maintenance" element={<SingleTabPage title="Index Maintenance"><IndexMaintenance /></SingleTabPage>} />
+            <Route path="/data-viewer" element={<SingleTabPage title="View FDR Data"><DataViewer /></SingleTabPage>} />
+            <Route path="/load-fdr-data" element={<SingleTabPage title="FDR Loading"><LoadFDRData /></SingleTabPage>} />
+            <Route path="/report-path" element={<ReportPath />} />
+            <Route path="/report-generation" element={<ReportGeneration />} />
+            <Route path="/" element={<HomeCards />} />
+          </Routes>
         </Box>
-      </Router>
+      </Box>
     </ThemeProvider>
   );
 }
 
-export default App;
+const AppWrapper = () => {
+  return (
+    <Router>
+      <App />
+    </Router>
+  );
+};
+
+export default AppWrapper;
